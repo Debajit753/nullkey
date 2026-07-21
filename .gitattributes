@@ -1,0 +1,12 @@
+# Normalize line endings across platforms (no CRLF churn)
+* text=auto eol=lf
+
+# Files git should treat as binary (never diff / never touch line endings)
+*.so    binary
+*.o     binary
+*.key   binary
+*.onion binary
+
+# Help GitHub's language stats reflect the project honestly
+*.md    linguist-documentation
+cpp/**  linguist-language=C++

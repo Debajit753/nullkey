@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Unit + security tests (with coverage)
+        # The 6 C++ parity tests auto-skip here (no compiled core); the cpp-core job runs them.
+        run: pytest -q --cov=. --cov-report=term-missing
+      - name: Security lint (bandit)
+        run: bandit -q --severity-level medium -s B101 nullkey.py chat.py crypto.py identity.py contacts.py net.py ratchet.py wire.py fuzz_parser.py
+      - name: Dependency audit (pip-audit)
+        run: pip-audit
+        continue-on-error: true   # new advisories shouldn't hard-fail the build; review them
+      - name: Fuzz smoke test (parser can't crash)
+        run: python fuzz_parser.py
+
+  cpp-core:
+    # Builds the C++ core and proves it matches the Python reference byte-for-byte.
+    # The `tests` job skips the parity tests (no .so); this one runs them for real.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install libsodium + build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsodium-dev
+          python -m pip install --upgrade pip
+          pip install pybind11
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Build the C++ core
+        run: python setup.py build_ext --inplace
+      - name: Parity tests (C++ ↔ Python, byte-for-byte)
+        run: pytest -q test_core_parity.py
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for committed secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2

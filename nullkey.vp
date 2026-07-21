@@ -1,0 +1,59 @@
+// nullkey.vp — Verifpal model of Nullkey's handshake (design-level security check).
+//
+// This models the X3DH-style triple-DH handshake and the first encrypted message,
+// against an ACTIVE attacker (can read, drop, inject, and modify messages).
+// It asks: does the shared secret / first message stay confidential, and is the
+// sender authenticated, even with a man in the middle?
+//
+// Install:  https://verifpal.com  (single binary)
+// Run:      verifpal verify nullkey.vp
+//
+// NOTE: starter model — refine it as the protocol evolves (add the ratchet steps,
+// model key compromise for post-compromise security, etc.). Formal modeling tests
+// the DESIGN; it complements (does not replace) the code tests and a real audit.
+
+attacker[active]
+
+principal Alice[
+    knows private ika          // long-term identity key
+    generates eka              // fresh ephemeral
+    gika = G^ika
+    geka = G^eka
+]
+
+principal Bob[
+    knows private ikb
+    generates ekb
+    generates rkb              // initial ratchet key
+    gikb = G^ikb
+    gekb = G^ekb
+    grkb = G^rkb
+]
+
+// public keys travel over the (attacker-controlled) network
+Alice -> Bob: gika, geka
+Bob -> Alice: gikb, gekb, grkb
+
+principal Alice[
+    dh1a = gekb^ika            // DH(IK_a, EK_b)
+    dh2a = gikb^eka            // DH(EK_a, IK_b)
+    dh3a = gekb^eka            // DH(EK_a, EK_b)
+    ska = HASH(dh1a, dh2a, dh3a)
+    generates msg
+    c = AEAD_ENC(ska, msg, gika)
+]
+
+Alice -> Bob: c
+
+principal Bob[
+    dh1b = gika^ekb
+    dh2b = geka^ikb
+    dh3b = geka^ekb
+    skb = HASH(dh1b, dh2b, dh3b)
+    msg_dec = AEAD_DEC(skb, c, gika)?
+]
+
+queries[
+    confidentiality? msg
+    authentication? Alice -> Bob: c
+]

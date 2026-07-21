@@ -1,0 +1,9 @@
+# Silvertongue — Python deps
+# Install with:  pip install -r requirements.txt
+# You ALSO need the `tor` binary on your system (not needed for --local dev mode):
+#   macOS:  brew install tor
+#   Linux:  sudo apt install tor
+stem>=1.8.2            # talks to Tor, creates the persistent onion service
+PySocks>=1.7.1        # connect out through Tor's SOCKS proxy
+PyNaCl>=1.5.0         # libsodium bindings: X25519 key exchange + authenticated encryption
+prompt_toolkit>=3.0   # the terminal input line (Phase 1) that survives incoming messages

@@ -1,0 +1,10 @@
+# Dev + security tooling.  Install:  pip install -r requirements-dev.txt
+pytest>=8.0          # test runner
+pytest-cov>=5.0      # coverage
+ruff>=0.5            # fast linter
+bandit>=1.7          # Python security static analysis (SAST)
+pip-audit>=2.7       # dependency vulnerability (CVE) scanner
+detect-secrets>=1.5  # local secret scan (CI also runs gitleaks)
+# atheris is OPTIONAL (coverage-guided fuzzing) and needs clang/libFuzzer.
+# fuzz_parser.py falls back to a stdlib fuzzer if it's missing. To try it:
+# atheris>=2.3

@@ -1,0 +1,52 @@
+# ── Nullkey secrets & runtime state — NEVER commit these ────────────────────
+# Your identity, keys, and contacts ARE your account. Leaking them deanonymizes
+# you and your contacts. These must catch them under ANY data-dir name.
+# (Note: .gitignore only treats '#' as a comment at the START of a line — never
+#  put a comment after a pattern, or the pattern silently stops matching.)
+data/
+peer*/
+tor*/
+# private keys: crypto_identity.key, onion_identity.key
+*.key
+# any file holding a raw onion address
+*.onion
+# the contact book (peer onion addresses + public keys), at any depth
+contacts.json
+**/contacts.json
+# Tor runtime state
+.tor-*/
+.tor-data/
+
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── C/C++ build artifacts (Phase 3) ─────────────────────────────────────────
+build/
+*.so
+*.pyd
+*.dll
+*.exe
+*.o
+*.obj
+*.lib
+*.exp
+*.pdb
+*.egg-info/
+*.dSYM/
+
+# ── Test / tooling caches ────────────────────────────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.secrets.baseline
+
+# ── OS / editor junk ─────────────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+Thumbs.db
+.vscode/
+.idea/
