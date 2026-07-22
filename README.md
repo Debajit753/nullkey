@@ -53,7 +53,7 @@
 
 A memory bug in a network **parser** can leak keys, so the parser is the piece most worth making memory-safe. Nullkey ports the primitives + the untrusted frame parser to **C++/libsodium** (exposed via `pybind11` as `nullkey_core`), proves it matches the Python reference **byte-for-byte**, and runs it under **ASan/UBSan + a fuzzer**. The app uses the C++ core when it's built and falls back to pure Python otherwise.
 
-## Quick taste
+## Quick test
 
 ```bash
 python3 nullkey.py --local --data-dir ./peerA    # terminal 1
