@@ -1,8 +1,7 @@
 # Security Policy
 
-## ⚠️ This is an educational project — not audited, not for real secrets
 
-Nullkey is a **learning build**. Its cryptography (an X3DH-style handshake and a
+Its cryptography (an X3DH-style handshake and a
 Double Ratchet) is **implemented from scratch** and has had **no professional
 security review or audit**. It may contain serious flaws.
 
@@ -15,12 +14,8 @@ If you need real private, anonymous messaging, use a reviewed tool such as
 
 Please **do not open a public GitHub issue** for security bugs.
 
-- Use GitHub's **[Report a vulnerability](../../security/advisories/new)** (private
-  security advisory), **or**
 - contact the repo owner via their GitHub profile.
 
-Since this is a personal learning project there are no guarantees on response time,
-but I'm always glad to learn what I got wrong.
 
 ## Threat model (what it is *designed* to do — remember: unverified)
 
