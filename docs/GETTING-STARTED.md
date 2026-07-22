@@ -9,6 +9,7 @@
 
 - **Python 3.9+** — required.
 - **The Tor binary** — only needed for the *real* over-Tor mode (the local test doesn't use it):
+  - Windows: Download the Tor Expert Bundle. If it isn't in your `PATH`, open `net.py` and modify the fallback path (`alt_path`) to point to your `tor.exe` location.
   - macOS: `brew install tor`
   - Linux: `sudo apt install tor`
 - **libsodium** *(optional)* — only if you want to build the C++ core. The app runs fine in **pure Python** without it.
