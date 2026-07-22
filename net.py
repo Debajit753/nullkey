@@ -50,8 +50,17 @@ def launch_tor(socks_port, control_port, data_dir, bridges=None):
         config["Bridge"] = list(bridges)
 
     try:
+        import shutil
+        tor_path = shutil.which("tor")
+        if not tor_path:
+            alt_path = r"D:\tor experts\tor-expert-bundle-windows-x86_64-15.0.19\tor\tor.exe"
+            if os.path.exists(alt_path):
+                tor_path = alt_path
+            else:
+                tor_path = "tor"
+
         return stem_process.launch_tor_with_config(
-            config=config, take_ownership=True, init_msg_handler=on_line)
+            config=config, take_ownership=True, init_msg_handler=on_line, tor_cmd=tor_path)
     except OSError as e:
         sys.exit("Could not start Tor (is the `tor` binary installed?  "
                  "macOS: brew install tor / Linux: sudo apt install tor)\n  " + str(e))
