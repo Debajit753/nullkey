@@ -1,8 +1,6 @@
 # Nullkey — a Tor-based encrypted chat (student build)
 
 
-> Nullkey is a **learning build** with **self-implemented, UNAUDITED cryptography** and has had **no professional security review**. Do not use it to protect anything sensitive or to keep anyone safe.
-> **If you need real private messaging, use [Signal](https://signal.org).** Nullkey exists to *learn* how tools like Signal, [Briar](https://briarproject.org), and [Cwtch](https://cwtch.im) work — not to replace them. See [SECURITY.md](docs/SECURITY.md).
 
 ![CI](https://github.com/Debajit753/nullkey/actions/workflows/ci.yml/badge.svg)
 
