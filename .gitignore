@@ -50,3 +50,9 @@ htmlcov/
 Thumbs.db
 .vscode/
 .idea/
+
+# ── Personal docs (not for public repo) ─────────────────────────────────────
+PROGRESS.md
+docs/PROGRESS.md
+secure-messenger-prd.md
+docs/secure-messenger-prd.md

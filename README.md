@@ -2,13 +2,13 @@
 
 
 > Nullkey is a **learning build** with **self-implemented, UNAUDITED cryptography** and has had **no professional security review**. Do not use it to protect anything sensitive or to keep anyone safe.
-> **If you need real private messaging, use [Signal](https://signal.org).** Nullkey exists to *learn* how tools like Signal, [Briar](https://briarproject.org), and [Cwtch](https://cwtch.im) work — not to replace them. See [SECURITY.md](SECURITY.md).
+> **If you need real private messaging, use [Signal](https://signal.org).** Nullkey exists to *learn* how tools like Signal, [Briar](https://briarproject.org), and [Cwtch](https://cwtch.im) work — not to replace them. See [SECURITY.md](docs/SECURITY.md).
 
 ![CI](https://github.com/Debajit753/nullkey/actions/workflows/ci.yml/badge.svg)
 
 **Nullkey** is a tiny **1:1 end-to-end-encrypted chat** where each person is their own **Tor v3 onion service** — no server, no account, no phone number. It runs in the **terminal**. A student built it to learn how real private-messaging tools actually work.
 
-📖 **[Get started + FAQ →](GETTING-STARTED.md)**  ·  🧪 **[Tests + security →](TESTING.md)**  ·  🔒 **[Threat model →](SECURITY.md)**  ·  📚 [Glossary](GLOSSARY.md) · [Learning path](LEARNING-PATH.md) · [Design doc / PRD](secure-messenger-prd.md)
+📖 **[Get started + FAQ →](docs/GETTING-STARTED.md)**  ·  🧪 **[Tests + security →](docs/TESTING.md)**  ·  🔒 **[Threat model →](docs/SECURITY.md)**  ·  📚 [Glossary](docs/GLOSSARY.md) · [Learning path](docs/LEARNING-PATH.md) · [Design doc / PRD](docs/secure-messenger-prd.md)
 
 ---
 
@@ -64,7 +64,7 @@ python3 nullkey.py --local --data-dir ./peerA    # terminal 1
 python3 nullkey.py --local --data-dir ./peerB    # terminal 2  (then: /add + /connect)
 ```
 
-Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STARTED.md](GETTING-STARTED.md)**.
+Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
 
 ## Roadmap
 
@@ -90,8 +90,8 @@ Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STAR
 | `cpp/` + `setup.py` | the **C++ core** (`core.cpp`, `bindings.cpp`, `asan_test.cpp`, `fuzz_frame.cpp`) |
 | `test_*.py` · `fuzz_parser.py` · `nullkey.vp` | test suites · parser fuzzer · Verifpal model |
 | `Makefile` · `.github/workflows/ci.yml` | one-word checks · CI |
-| `GETTING-STARTED.md` · `TESTING.md` · `SECURITY.md` | run + FAQ · tests + graphs · threat model |
-| `GLOSSARY.md` · `LEARNING-PATH.md` · `secure-messenger-prd.md` · `PROGRESS.md` | terms · curriculum · design doc · changelog |
+| `docs/GETTING-STARTED.md` · `docs/TESTING.md` · `docs/SECURITY.md` | run + FAQ · tests + graphs · threat model |
+| `docs/GLOSSARY.md` · `docs/LEARNING-PATH.md` · `docs/secure-messenger-prd.md` · `docs/PROGRESS.md` | terms · curriculum · design doc · changelog |
 
 ## License
 
@@ -99,7 +99,7 @@ Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STAR
 
 ## Security
 
-Threat model + how to report a vulnerability: **[SECURITY.md](SECURITY.md)**. Please **don't** open a public issue for security bugs.
+Threat model + how to report a vulnerability: **[SECURITY.md](docs/SECURITY.md)**. Please **don't** open a public issue for security bugs.
 
 ## Responsible use
 
