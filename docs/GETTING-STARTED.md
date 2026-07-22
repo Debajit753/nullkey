@@ -1,6 +1,6 @@
 # Getting started with Nullkey
 
-> ⚠️ Educational, unaudited project — don't use it to protect real secrets. See [SECURITY.md](SECURITY.md).
+> See [SECURITY.md](SECURITY.md) for the full threat model.
 > New here? The **[README](../README.md)** explains what Nullkey is and how it works, and the **[GLOSSARY](GLOSSARY.md)** defines every term in plain language.
 
 ---
