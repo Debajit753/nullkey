@@ -38,6 +38,8 @@ Please **do not open a public GitHub issue** for security bugs.
   volume. Padding + cover traffic raise the bar; they don't defeat this.
 - **You leaking your own identity** out of band, or **skipping the safety-number
   check** (then MITM is possible).
+- **CPU Denial of Service (DoS) via Forged Headers**: Because the message header (DH public key and sequence counter) is read and processed (triggering X25519 DH operations and KDF chain walks) before the AEAD ciphertext is verified, a remote attacker can cheaply spam unauthenticated frames to consume CPU.
+- **Memory Exhaustion via Unbounded Skip-Store (`MKSKIPPED`)**: While individual gaps are bounded by `MAX_SKIP = 1000`, there is no global cap or aging/purging policy for the `MKSKIPPED` table. A patient attacker could trigger many small skips over time to consume memory.
 - Bugs in this from-scratch, unaudited code. See the top of this file.
 
 ## Scope
