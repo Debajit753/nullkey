@@ -1,7 +1,12 @@
 # Nullkey — a Tor-based encrypted chat (student build)
 
-
-
+```text
+ _   _ _   _ _     _     _  _________   __
+| \ | | | | | |   | |   | |/ / ____\ \ / /
+|  \| | | | | |   | |   | ' /|  _|  \ V /
+| |\  | |_| | |___| |___| . \| |___  | |
+|_| \_|\___/|_____|_____|_|\_\_____| |_|
+```
 ![CI](https://github.com/Debajit753/nullkey/actions/workflows/ci.yml/badge.svg)
 
 **Nullkey** is a tiny **1:1 end-to-end-encrypted chat** where each person is their own **Tor v3 onion service** — no server, no account, no phone number. It runs in the **terminal**. A student built it to learn how real private-messaging tools actually work.
