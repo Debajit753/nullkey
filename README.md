@@ -8,6 +8,8 @@
 
 📖 **[Get started + FAQ →](docs/GETTING-STARTED.md)**  ·  🧪 **[Tests + security →](docs/TESTING.md)**  ·  🔒 **[Threat model →](docs/SECURITY.md)**  ·  📚 [Glossary](docs/GLOSSARY.md) · [Learning path](docs/LEARNING-PATH.md) · [Design doc / PRD](docs/secure-messenger-prd.md)
 
+![Nullkey Terminal UI](assets/terminal_ui.png)
+
 ---
 
 ## What it is
@@ -28,16 +30,7 @@
 
 ### A message's journey
 
-```mermaid
-flowchart LR
-    you["You<br/>(terminal)"] -->|type| enc["Double Ratchet<br/>encrypt"]
-    enc --> pad["Pad to a fixed<br/>256-byte bucket"]
-    pad --> t1["Your Tor<br/>onion service"]
-    t1 -.->|~6 Tor relays| t2["Their Tor"]
-    t2 --> unpad["Unpad"]
-    unpad --> dec["Double Ratchet<br/>decrypt"]
-    dec -->|show| them["Them<br/>(terminal)"]
-```
+![A message's journey](assets/message_journey.png)
 
 ### The crypto stack
 
