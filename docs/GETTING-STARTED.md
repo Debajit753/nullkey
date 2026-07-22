@@ -99,6 +99,59 @@ Everything that makes you *you* lives in the `--data-dir` (default `./data`):
 
 Guard that folder. Back it up if you want to keep your address; delete it and you become a brand-new identity next run. It's `.gitignore`d, so it never gets committed.
 
+## 7. The C++ Core vs. Pure Python Backend
+
+Nullkey is designed to run in two modes: **Pure Python (default)** and **C++ Crypto Core (optional)**.
+
+### Features & Comparison
+
+| Feature | Pure Python Backend (Default) | C++ Core (Optional Extension) |
+|---|---|---|
+| **Language** | Python 3.9+ | C++17 (compiled to native library) |
+| **Crypto engine** | `PyNaCl` (binding) & Pure-Python fallbacks | Native C++ `libsodium` |
+| **Performance** | Standard | High performance (faster key derivations) |
+| **Risk Mitigation** | Standard Python bounds checking | Memory-safe, bounds-checked C++ frame parsing (fuzzed & sanitized) |
+| **Setup difficulty** | Easiest (works out-of-the-box) | Requires C++ compiler & libsodium setup |
+
+---
+
+### How to Compile and Run the C++ Core
+
+When the C++ extension is compiled, Nullkey will automatically detect it and use it as its default cryptographic and parsing engine. If it is missing, the app seamlessly falls back to the Python backend.
+
+#### Step 1: Install System Dependencies
+- **macOS**:
+  ```bash
+  brew install libsodium
+  ```
+- **Linux**:
+  ```bash
+  sudo apt install -y libsodium-dev build-essential
+  ```
+- **Windows**:
+  1. Download the pre-compiled MSVC/MinGW binaries for **libsodium** from the [libsodium downloads page](https://download.libsodium.org/libsodium/releases/).
+  2. Extract the library and include folders.
+  3. Modify [setup.py](../setup.py) to point to the directory where you extracted `libsodium` so the compiler can locate the header files (`sodium.h`) and libraries (`libsodium.lib` / `libsodium.a`).
+
+#### Step 2: Build the Extension
+Activate your virtual environment and run the following command in your terminal:
+```bash
+# Install compilation tooling helper
+pip install pybind11
+
+# Compile the C++ extension in-place
+python setup.py build_ext --inplace
+```
+This produces a compiled binary in the root directory:
+- Windows: `nullkey_core.cpXXX-win_amd64.pyd`
+- macOS/Linux: `nullkey_core.cpython-XXX.so`
+
+#### Step 3: Run and Verify
+Nullkey will now run automatically on the C++ core. You can verify that it byte-for-byte matches the pure Python implementation by running the parity test suite:
+```bash
+pytest tests/test_core_parity.py
+```
+
 ---
 
 ## FAQ
