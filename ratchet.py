@@ -31,6 +31,7 @@ import os
 import hmac
 import hashlib
 import struct
+from collections import OrderedDict
 
 from nacl.bindings import (
     crypto_scalarmult,
@@ -54,7 +55,9 @@ else:
 BACKEND = "c++ (nullkey_core)" if CORE is not None else "python"
 
 MAX_SKIP = 1000          # tolerate this many out-of-order/skipped messages per chain
+MAX_STORED_SKIPPED_KEYS = 3000   # global cap on cached skipped keys (prevents OOM)
 HEADER_LEN = 40          # 32-byte ratchet pubkey + 4-byte PN + 4-byte N
+MAC_LEN = 16             # transport MAC length (BLAKE2b-128)
 
 
 # ------------------------------ primitives -------------------------------- #
@@ -125,8 +128,9 @@ def _aead_decrypt(key, nonce, ct, ad):
 
 
 def kdf_sk(ikm):
-    """Handshake KDF: raw DH concatenation -> 32-byte shared secret (SK)."""
-    return _hkdf(b"\x00" * 32, ikm, b"NullkeyHandshake", 32)
+    """Handshake KDF: raw DH concatenation -> (SK_32, transport_mac_key_32)."""
+    out = _hkdf(b"\x00" * 32, ikm, b"NullkeyHandshakeKeys", 64)
+    return out[:32], out[32:64]
 
 
 def kdf_rk(rk, dh_out):
@@ -161,7 +165,8 @@ class DoubleRatchet:
         self.Ns = 0           # messages sent in current sending chain
         self.Nr = 0           # messages received in current receiving chain
         self.PN = 0           # messages sent in the PREVIOUS sending chain
-        self.MKSKIPPED = {}   # (ratchet_pub, N) -> message key, for out-of-order
+        self.MKSKIPPED = OrderedDict()  # (ratchet_pub, N) -> message key, LRU-capped
+        self.mac_key = None   # per-session transport MAC key (set by handshake)
 
     # -- initialisation (from the handshake's shared secret SK) -- #
     @classmethod
@@ -187,15 +192,29 @@ class DoubleRatchet:
         self.Ns += 1
         key, nonce = _msg_keys(mk)
         ct = _aead_encrypt(key, nonce, plaintext, associated_data + header)
-        return header + ct
+        payload = header + ct
+        if self.mac_key:
+            mac = hmac.new(self.mac_key, payload, hashlib.blake2b).digest()[:MAC_LEN]
+            return mac + payload
+        return payload
 
     # ------------------------------ decrypt ------------------------------- #
     def decrypt(self, message: bytes, associated_data: bytes = b"") -> bytes:
+        # --- transport MAC pre-check: reject garbage in microseconds --- #
+        if self.mac_key:
+            if len(message) < MAC_LEN + HEADER_LEN:
+                raise ValueError("message too short for transport MAC")
+            mac, payload = message[:MAC_LEN], message[MAC_LEN:]
+            expected = hmac.new(self.mac_key, payload, hashlib.blake2b).digest()[:MAC_LEN]
+            if not hmac.compare_digest(mac, expected):
+                raise ValueError("invalid transport MAC — forged/corrupted frame")
+        else:
+            payload = message
         # Snapshot state and roll back if anything fails, so a single bad/tampered
         # frame can be dropped without corrupting the whole session.
         snap = self._snapshot()
         try:
-            return self._decrypt(message, associated_data)
+            return self._decrypt(payload, associated_data)
         except Exception:
             self._restore(snap)
             raise
@@ -235,6 +254,8 @@ class DoubleRatchet:
             raise ValueError("too many skipped messages")
         while self.Nr < until:
             self.CKr, mk = kdf_ck(self.CKr)
+            if len(self.MKSKIPPED) >= MAX_STORED_SKIPPED_KEYS:
+                self.MKSKIPPED.popitem(last=False)   # evict oldest
             self.MKSKIPPED[(self.DHr, self.Nr)] = mk
             self.Nr += 1
 
@@ -242,6 +263,14 @@ class DoubleRatchet:
         self.PN = self.Ns
         self.Ns = 0
         self.Nr = 0
+        # prune skipped keys from DH epochs older than the outgoing self.DHr
+        # and the incoming dh_pub — keys from earlier epochs are unreachable
+        allowed = {dh_pub}
+        if self.DHr is not None:
+            allowed.add(self.DHr)
+        for k in list(self.MKSKIPPED):
+            if k[0] not in allowed:
+                del self.MKSKIPPED[k]
         self.DHr = dh_pub
         self.RK, self.CKr = kdf_rk(self.RK, dh(self.DHs[0], self.DHr))
         self.DHs = generate_dh()
@@ -249,8 +278,9 @@ class DoubleRatchet:
 
     def _snapshot(self):
         return (self.DHs, self.DHr, self.RK, self.CKs, self.CKr,
-                self.Ns, self.Nr, self.PN, dict(self.MKSKIPPED))
+                self.Ns, self.Nr, self.PN, OrderedDict(self.MKSKIPPED))
 
     def _restore(self, s):
         (self.DHs, self.DHr, self.RK, self.CKs, self.CKr,
-         self.Ns, self.Nr, self.PN, self.MKSKIPPED) = s
+         self.Ns, self.Nr, self.PN, mkskipped) = s
+        self.MKSKIPPED = mkskipped

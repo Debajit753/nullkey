@@ -7,6 +7,33 @@ import socket
 import time
 
 
+# ----------------------- per-peer rate limiting --------------------------- #
+class DecryptionRateLimiter:
+    """
+    Token-bucket rate limiter that throttles bad frames on a per-connection
+    basis.  Each bad (failed-MAC / failed-decrypt) frame consumes one token.
+    Once the bucket is empty the caller should drop the connection.
+
+    Tokens refill at a steady rate so legitimate hiccups don't cause bans.
+    """
+    def __init__(self, capacity: int = 30, refill_per_sec: float = 2.0):
+        self.capacity = capacity
+        self.refill_per_sec = refill_per_sec
+        self.tokens = float(capacity)
+        self._last_refill = time.monotonic()
+
+    def allow(self) -> bool:
+        """Return True if another bad frame should be tolerated; False ⇒ drop connection."""
+        now = time.monotonic()
+        elapsed = now - self._last_refill
+        self._last_refill = now
+        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_per_sec)
+        if self.tokens >= 1.0:
+            self.tokens -= 1.0
+            return True
+        return False
+
+
 def free_port():
     s = socket.socket()
     s.bind(("127.0.0.1", 0))

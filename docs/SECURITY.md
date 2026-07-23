@@ -38,8 +38,18 @@ Please **do not open a public GitHub issue** for security bugs.
   volume. Padding + cover traffic raise the bar; they don't defeat this.
 - **You leaking your own identity** out of band, or **skipping the safety-number
   check** (then MITM is possible).
-- **CPU Denial of Service (DoS) via Forged Headers**: Because the message header (DH public key and sequence counter) is read and processed (triggering X25519 DH operations and KDF chain walks) before the AEAD ciphertext is verified, a remote attacker can cheaply spam unauthenticated frames to consume CPU.
-- **Memory Exhaustion via Unbounded Skip-Store (`MKSKIPPED`)**: While individual gaps are bounded by `MAX_SKIP = 1000`, there is no global cap or aging/purging policy for the `MKSKIPPED` table. A patient attacker could trigger many small skips over time to consume memory.
+- **CPU Denial of Service (DoS) via Forged Headers**: *(mitigated)* Each frame
+  now carries a BLAKE2b-128 transport MAC keyed with a per-session key derived
+  at handshake time.  Forged/corrupt frames are rejected in microseconds
+  (one HMAC check) before any X25519 DH or KDF work is performed.  In addition,
+  `net.py` provides a per-connection token-bucket rate limiter; after 30 bad
+  frames (refilling at 2/s) the connection is automatically torn down.
+- **Memory Exhaustion via Unbounded Skip-Store (`MKSKIPPED`)**: *(mitigated)*
+  `MKSKIPPED` is now an `OrderedDict` with a global cap of
+  `MAX_STORED_SKIPPED_KEYS = 3000`.  When the cap is hit, the oldest entry is
+  evicted (LRU).  Additionally, `_dh_ratchet()` prunes all skipped keys from
+  DH epochs older than the current and incoming ratchet key, so the store
+  shrinks naturally on every ratchet step.
 - Bugs in this from-scratch, unaudited code. See the top of this file.
 
 ## Scope

@@ -120,10 +120,11 @@ def ratchet_handshake(sock, id_priv: bytes, id_pub: bytes, initiator: bool):
         dh2 = ratchet.dh(id_priv, p_ek)   # DH(IK_r, EK_i) == DH(EK_i, IK_r)
         dh3 = ratchet.dh(ek_priv, p_ek)   # DH(EK_r, EK_i) == DH(EK_i, EK_r)
 
-    sk = ratchet.kdf_sk(dh1 + dh2 + dh3)
+    sk, mac_key = ratchet.kdf_sk(dh1 + dh2 + dh3)
 
     if initiator:
         dr = ratchet.DoubleRatchet.init_initiator(sk, p_rk)
     else:
         dr = ratchet.DoubleRatchet.init_responder(sk, (rk_priv, rk_pub))
+    dr.mac_key = mac_key
     return dr, id_pub, p_ik

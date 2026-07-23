@@ -133,6 +133,7 @@ class App:
             self.conn = sock
             self.ratchet = dr
             self.peer_pub = theirpub
+            self._rate_limiter = net.DecryptionRateLimiter()   # fresh bucket per peer
         sn = crypto.safety_number(mypub, theirpub)
         name = self.contacts.find_by_pubkey(theirpub.hex())
         verified = bool(name) and self.contacts.get(name).get("verified")
@@ -175,6 +176,12 @@ class App:
                 try:
                     body = dr.decrypt(frame)
                 except Exception:
+                    with self.lock:
+                        rl = getattr(self, '_rate_limiter', None)
+                    if rl and not rl.allow():
+                        ui.out(ui.warn("too many bad frames — disconnecting (possible attack)"))
+                        self._detach(sock)
+                        return
                     ui.out(ui.warn("undecryptable frame (wrong key or tampering) — dropped"))
                     continue
             try:
