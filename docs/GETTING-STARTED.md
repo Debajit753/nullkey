@@ -17,14 +17,40 @@
 
 ## 2. Install
 
+Clone the repository and enter the directory:
 ```bash
-git clone https://github.com/Debajit753/nullkey.git      # or unzip the release
+git clone https://github.com/Debajit753/nullkey.git
 cd nullkey
-python3 -m venv .venv && source .venv/bin/activate
+```
+
+Create a virtual environment:
+```bash
+# macOS/Linux
+python3 -m venv .venv
+
+# Windows
+python -m venv .venv
+```
+
+Activate the virtual environment:
+```bash
+# macOS/Linux
+source .venv/bin/activate
+
+# Windows (PowerShell)
+.\.venv\Scripts\Activate.ps1
+
+# Windows (Command Prompt)
+.\.venv\Scripts\activate.bat
+```
+
+Install the dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
 That's all — `nullkey.py` is now runnable in pure Python.
+
 
 ## 3. Run it
 
