@@ -1,12 +1,9 @@
 # Nullkey — Concepts, Processes & Glossary
 
-A plain-language reference for **everything in this project**: how the moving parts work (processes), and what every term means (glossary). Read the "Big picture" and "Processes" first; use the "Glossary" as a lookup.
-
-> ⚠️ **Educational, unaudited project** — self-implemented crypto, no security review. Don't use Nullkey to protect real secrets; use [Signal](https://signal.org). See [SECURITY.md](SECURITY.md).
+A plain-language reference for **everything in this project**: how the moving parts work (processes), and what every term means (glossary)..
 
 ---
 
-## Big picture (in one breath)
 
 Nullkey is a **terminal** chat app where two people talk **directly to each other over the Tor network** — no server, no account. Your address *is* your public key. Messages are encrypted end-to-end with a **Double Ratchet** (designed so a stolen key can't read old messages — though this is a from-scratch, unaudited implementation). It's built in Python, with the crypto primitives + the risky parser also written in C++ (libsodium) for speed and memory safety.
 
