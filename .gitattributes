@@ -1,5 +1,7 @@
 # Normalize line endings across platforms (no CRLF churn)
 * text=auto eol=lf
+*.bat text eol=crlf
+*.command text eol=lf
 
 # Files git should treat as binary (never diff / never touch line endings)
 *.so    binary
