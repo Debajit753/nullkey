@@ -37,9 +37,105 @@ import shutil
 try:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.patch_stdout import patch_stdout
-    from prompt_toolkit.shortcuts import clear as clear_screen, radiolist_dialog, input_dialog
+    from prompt_toolkit.shortcuts import clear as clear_screen
+    from prompt_toolkit.widgets import RadioList, Dialog, Label, Button, TextArea, ValidationToolbar
+    from prompt_toolkit.layout.containers import HSplit
+    from prompt_toolkit.application import Application, get_app
+    from prompt_toolkit.layout import Layout, Dimension as D
+    from prompt_toolkit.key_binding import KeyBindings
+    from prompt_toolkit.key_binding.bindings.focus import focus_next, focus_previous
+    from prompt_toolkit.key_binding.defaults import load_key_bindings
+    from prompt_toolkit.key_binding.key_bindings import merge_key_bindings
+    from prompt_toolkit.filters import Condition
 except ImportError:
     sys.exit("Missing deps. Run:  pip install -r requirements.txt")
+
+def _radiolist_dialog(title="", text="", ok_text="Ok", cancel_text="Cancel", values=None, default=None):
+    if values is None:
+        values = []
+
+    radio_list = RadioList(values=values, default=default)
+
+    def ok_handler() -> None:
+        get_app().exit(result=radio_list.current_value)
+
+    def cancel_handler() -> None:
+        get_app().exit(result=None)
+
+    dialog = Dialog(
+        title=title,
+        body=HSplit(
+            [Label(text=text, dont_extend_height=True), radio_list],
+            padding=1,
+        ),
+        buttons=[
+            Button(text=ok_text, handler=ok_handler),
+            Button(text=cancel_text, handler=cancel_handler),
+        ],
+        with_background=True,
+    )
+
+    bindings = KeyBindings()
+    bindings.add("tab")(focus_next)
+    bindings.add("s-tab")(focus_previous)
+
+    # Keyboard support: press Enter inside the RadioList to instantly confirm the selection
+    @bindings.add("enter", filter=Condition(lambda: get_app().layout.has_focus(radio_list)))
+    def _submit_radio(event) -> None:
+        radio_list.current_value = radio_list.values[radio_list._selected_index][0]
+        event.app.exit(result=radio_list.current_value)
+
+    return Application(
+        layout=Layout(dialog),
+        key_bindings=merge_key_bindings([load_key_bindings(), bindings]),
+        mouse_support=True,
+        full_screen=True,
+    )
+
+def _input_dialog(title="", text="", ok_text="OK", cancel_text="Cancel", default=""):
+    def ok_handler() -> None:
+        get_app().exit(result=textfield.text)
+
+    def cancel_handler() -> None:
+        get_app().exit(result=None)
+
+    ok_button = Button(text=ok_text, handler=ok_handler)
+    cancel_button = Button(text=cancel_text, handler=cancel_handler)
+
+    textfield = TextArea(
+        text=default,
+        multiline=False,
+    )
+
+    dialog = Dialog(
+        title=title,
+        body=HSplit(
+            [
+                Label(text=text, dont_extend_height=True),
+                textfield,
+                ValidationToolbar(),
+            ],
+            padding=D(preferred=1, max=1),
+        ),
+        buttons=[ok_button, cancel_button],
+        with_background=True,
+    )
+
+    bindings = KeyBindings()
+    bindings.add("tab")(focus_next)
+    bindings.add("s-tab")(focus_previous)
+
+    # Keyboard support: press Enter inside the input text area to instantly submit it
+    @bindings.add("enter", filter=Condition(lambda: get_app().layout.has_focus(textfield)))
+    def _submit_input(event) -> None:
+        event.app.exit(result=textfield.text)
+
+    return Application(
+        layout=Layout(dialog),
+        key_bindings=merge_key_bindings([load_key_bindings(), bindings]),
+        mouse_support=True,
+        full_screen=True,
+    )
 
 import crypto
 import net
@@ -388,7 +484,7 @@ class App:
 
         result = None
         try:
-            result = radiolist_dialog(
+            result = _radiolist_dialog(
                 title="Account Switcher",
                 text="Use Up/Down arrows to select, Space/Enter to confirm:",
                 values=values,
@@ -404,7 +500,7 @@ class App:
         if result == "__create__":
             name = None
             try:
-                name = input_dialog(
+                name = _input_dialog(
                     title="Create New Account",
                     text="Enter a name for the new account:"
                 ).run()
