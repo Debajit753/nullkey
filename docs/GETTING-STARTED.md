@@ -103,6 +103,8 @@ This is the step that turns "encrypted to somebody" into "encrypted to the *righ
 | `/verify <name>` | mark a contact verified after you've compared safety numbers |
 | `/clear` | clear the screen |
 | `/bye` | disconnect the current chat (stay running) |
+| `/account` | manage, create, and switch accounts interactively |
+| `/panic` | destroy identity keys/contacts and exit immediately |
 | `/quit` | exit the app |
 | `/help` | list commands |
 
