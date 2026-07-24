@@ -32,10 +32,12 @@ import socket
 import threading
 import argparse
 
+import shutil
+
 try:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.patch_stdout import patch_stdout
-    from prompt_toolkit.shortcuts import clear as clear_screen
+    from prompt_toolkit.shortcuts import clear as clear_screen, radiolist_dialog, input_dialog
 except ImportError:
     sys.exit("Missing deps. Run:  pip install -r requirements.txt")
 
@@ -308,9 +310,166 @@ class App:
                 ui.out(ui.note("disconnected"))
             else:
                 ui.out(ui.warn("not connected"))
+        elif cmd == "/panic":
+            self._command_panic()
+            return True
+        elif cmd == "/account":
+            self._command_account()
         else:
             ui.out(ui.warn("unknown command: %s  (try /help)" % cmd))
         return False
+
+    def _command_panic(self):
+        # 1. Close current connection
+        with self.lock:
+            conn = self.conn
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        # 2. Close listener
+        if self.listener:
+            try:
+                self.listener.close()
+            except Exception:
+                pass
+        # 3. Kill Tor process if active
+        if self.use_tor and self.tor:
+            try:
+                self.tor.kill()
+            except Exception:
+                pass
+        # 4. Remove all files from data_dir
+        if os.path.exists(self.data_dir):
+            # Delete critical files first
+            for filename in ["contacts.json", "crypto_identity.key", "onion_identity.key"]:
+                path = os.path.join(self.data_dir, filename)
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+            try:
+                shutil.rmtree(self.data_dir, ignore_errors=True)
+            except Exception:
+                pass
+        # 5. Clear screen and exit
+        clear_screen()
+        sys.exit(0)
+
+    def _find_accounts(self):
+        parent = os.path.dirname(os.path.abspath(self.data_dir))
+        accounts = []
+        if os.path.exists(parent):
+            for entry in os.listdir(parent):
+                full_path = os.path.join(parent, entry)
+                if os.path.isdir(full_path):
+                    if os.path.exists(os.path.join(full_path, "crypto_identity.key")):
+                        accounts.append((entry, full_path))
+        # Ensure current account is listed if it has a key
+        current_abs = os.path.abspath(self.data_dir)
+        current_name = os.path.basename(current_abs)
+        if current_name and not any(acc[1] == current_abs for acc in accounts):
+            if os.path.exists(os.path.join(current_abs, "crypto_identity.key")):
+                accounts.append((current_name, current_abs))
+        return sorted(accounts, key=lambda x: x[0])
+
+    def _command_account(self):
+        accounts = self._find_accounts()
+        values = []
+        current_abs = os.path.abspath(self.data_dir)
+        for name, path in accounts:
+            label = name
+            if os.path.abspath(path) == current_abs:
+                label += " (active)"
+            values.append((os.path.abspath(path), label))
+        values.append(("__create__", "[Create New Account...]"))
+
+        result = None
+        try:
+            result = radiolist_dialog(
+                title="Account Switcher",
+                text="Use Up/Down arrows to select, Space/Enter to confirm:",
+                values=values,
+                default=current_abs
+            ).run()
+        except Exception as e:
+            ui.out(ui.err("dialog failed: %s" % e))
+            return
+
+        if result is None:
+            return
+
+        if result == "__create__":
+            name = None
+            try:
+                name = input_dialog(
+                    title="Create New Account",
+                    text="Enter a name for the new account:"
+                ).run()
+            except Exception as e:
+                ui.out(ui.err("dialog failed: %s" % e))
+                return
+
+            if not name or not name.strip():
+                return
+            parent = os.path.dirname(os.path.abspath(self.data_dir))
+            result = os.path.abspath(os.path.join(parent, name.strip()))
+
+        if result == current_abs:
+            return
+
+        self._switch_account(result)
+
+    def _switch_account(self, new_data_dir):
+        # 1. Disconnect current connection
+        with self.lock:
+            conn = self.conn
+        if conn:
+            self._detach(conn)
+            ui.out(ui.note("disconnected active connection"))
+
+        # 2. Remove onion service if active
+        if self.use_tor and self.controller and self.my_address:
+            try:
+                old_service_id = self.my_address.split(".")[0]
+                self.controller.remove_ephemeral_hidden_service(old_service_id)
+            except Exception:
+                pass
+
+        # 3. Close the listener
+        if self.listener:
+            try:
+                self.listener.close()
+            except Exception:
+                pass
+
+        # 4. Re-route data_dir and load new keys/contacts
+        self.data_dir = new_data_dir
+        os.makedirs(self.data_dir, exist_ok=True)
+        self.priv = identity_mod.load_or_create_x25519(self.data_dir)
+        self.contacts = Contacts(os.path.join(self.data_dir, "contacts.json"))
+
+        # 5. Start a new listener
+        listen_port = net.free_port()
+        self.listener = net.listen_socket(listen_port)
+
+        # 6. Re-create the persistent service or local address
+        if self.use_tor:
+            ui.out(ui.note("publishing new onion service..."))
+            self.my_address = identity_mod.create_persistent_service(
+                self.controller, self.data_dir, ONION_VPORT, listen_port)
+        else:
+            self.my_address = "127.0.0.1:%d" % listen_port
+
+        # 7. Start the accept loop again
+        threading.Thread(target=self._accept_loop, daemon=True).start()
+
+        # 8. Refresh screen and show welcome
+        clear_screen()
+        ui.out(ui.ok("switched to account: %s" % os.path.basename(self.data_dir)))
+        self._banner()
 
     def _help(self):
         ui.out("  commands")
@@ -323,6 +482,8 @@ class App:
             "  /verify <name>          mark the current peer verified (after comparing safety #)\n"
             "  /clear                  clear the screen\n"
             "  /bye                    leave the current chat (stay online)\n"
+            "  /account                manage and switch accounts\n"
+            "  /panic                  destroy identity/contacts and exit immediately\n"
             "  /quit                   exit\n"
             "  (any other text)        send a message to the current chat")
 
