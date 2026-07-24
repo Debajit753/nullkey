@@ -55,12 +55,30 @@ A memory bug in a network **parser** can leak keys, so the parser is the piece m
 
 ## Quick test
 
+You can use the one-click launcher scripts in the `start/` folder, which automatically set up the virtual environment (`.venv`) and install all requirements on the first run:
+
+* **Windows**: Double-click or run `start\start.bat`
+* **macOS / Linux**: Double-click or run `start/start.command`
+
+To run a fast local test (no Tor needed) in separate terminals:
 ```bash
-python3 nullkey.py --local --data-dir ./peerA    # terminal 1
-python3 nullkey.py --local --data-dir ./peerB    # terminal 2  (then: /add + /connect)
+# Windows
+start\start.bat --local --data-dir .\peerA
+start\start.bat --local --data-dir .\peerB
+
+# macOS / Linux
+./start/start.command --local --data-dir ./peerA
+./start/start.command --local --data-dir ./peerB
+```
+
+Alternatively, you can run manually:
+```bash
+python3 nullkey.py --local --data-dir ./peerA
+python3 nullkey.py --local --data-dir ./peerB
 ```
 
 Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
+
 
 ## Roadmap
 
@@ -83,6 +101,7 @@ Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STAR
 | `crypto.py` | framing + safety number + the X3DH-style `ratchet_handshake` |
 | `ratchet.py` | the **Double Ratchet** (forward secrecy + post-compromise security) |
 | `identity.py` · `contacts.py` · `net.py` · `wire.py` · `ui.py` | onion/long-term keys · contact book · Tor+SOCKS+retry · padding/decoys · ASCII banner |
+| `start/` | one-click launcher scripts for Windows (`start.bat`) and macOS/Linux (`start.command`) |
 | `cpp/` + `setup.py` | the **C++ core** (`core.cpp`, `bindings.cpp`, `asan_test.cpp`, `fuzz_frame.cpp`) |
 | `test_*.py` · `fuzz_parser.py` · `nullkey.vp` | test suites · parser fuzzer · Verifpal model |
 | `Makefile` · `.github/workflows/ci.yml` | one-word checks · CI |
