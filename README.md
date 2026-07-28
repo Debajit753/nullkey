@@ -11,7 +11,7 @@
 
 **Nullkey** is a tiny **1:1 end-to-end-encrypted chat** where each person is their own **Tor v3 onion service** — no server, no account, no phone number. It runs in the **terminal**. A student built it to learn how real private-messaging tools actually work.
 
-📖 **[Get started + FAQ →](docs/GETTING-STARTED.md)**  ·  🧪 **[Tests + security →](docs/TESTING.md)**  ·  🔒 **[Threat model →](docs/SECURITY.md)**  ·  📚 [Glossary](docs/GLOSSARY.md) · [Learning path](docs/LEARNING-PATH.md) · [Design doc / PRD](docs/secure-messenger-prd.md)
+📖 **[Get started + FAQ →](docs/GETTING-STARTED.md)**  ·  🧪 **[Tests + security →](docs/TESTING.md)**  ·  🔒 **[Threat model →](docs/SECURITY.md)**  ·  🛠 **[Hardening write-up →](docs/HARDENING.md)**  ·  📚 [Glossary](docs/GLOSSARY.md) · [Learning path](docs/LEARNING-PATH.md) · [Design doc / PRD](docs/secure-messenger-prd.md)
 
 ![Nullkey Terminal UI](assets/terminal_ui.png)
 
@@ -105,7 +105,7 @@ Full setup, the over-Tor flow, all commands, and the FAQ live in **[GETTING-STAR
 | `cpp/` + `setup.py` | the **C++ core** (`core.cpp`, `bindings.cpp`, `asan_test.cpp`, `fuzz_frame.cpp`) |
 | `test_*.py` · `fuzz_parser.py` · `nullkey.vp` | test suites · parser fuzzer · Verifpal model |
 | `Makefile` · `.github/workflows/ci.yml` | one-word checks · CI |
-| `docs/GETTING-STARTED.md` · `docs/TESTING.md` · `docs/SECURITY.md` | run + FAQ · tests + graphs · threat model |
+| `docs/GETTING-STARTED.md` · `docs/TESTING.md` · `docs/SECURITY.md` · `docs/HARDENING.md` | run + FAQ · tests + graphs · threat model · bugs found & fixed |
 | `docs/GLOSSARY.md` · `docs/LEARNING-PATH.md` · `docs/secure-messenger-prd.md` · `docs/PROGRESS.md` | terms · curriculum · design doc · changelog |
 
 ## License

@@ -6,6 +6,7 @@ It is STATIC X25519 (one shared key per session) — good enough to learn on,
 but with NO forward secrecy. Phase 2 replaces the `Box` here with a Double
 Ratchet. Don't call this "secure" until then.
 """
+import time
 import struct
 import hashlib
 from nacl.public import PrivateKey, PublicKey, Box
@@ -21,12 +22,27 @@ def send_frame(sock, data: bytes):
     sock.sendall(struct.pack(">I", len(data)) + data)
 
 
-def _recv_exact(sock, n):
+def _recv_exact(sock, n, deadline=None):
+    """
+    Read exactly n bytes, or None on close/timeout.
+
+    `deadline` is a WALL-CLOCK time.monotonic() value for the whole read. This
+    matters: a plain sock.settimeout(30) is a per-recv() timeout, and this loop
+    calls recv() repeatedly — so a peer dribbling one byte every 29s would reset
+    the clock forever and stall us indefinitely. The deadline can't be reset by
+    the peer sending more data.
+    """
     buf = b""
     while len(buf) < n:
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return None          # out of time for the whole operation
+            sock.settimeout(remaining)
         try:
             chunk = sock.recv(n - len(buf))
         except OSError:
+            # covers socket.timeout too (a subclass of OSError)
             return None  # socket closed (by peer or by us) — treat as clean disconnect
         if not chunk:
             return None
@@ -34,15 +50,15 @@ def _recv_exact(sock, n):
     return buf
 
 
-def recv_frame(sock):
+def recv_frame(sock, deadline=None):
     """Read one whole frame, or None if the peer closed / sent garbage."""
-    hdr = _recv_exact(sock, 4)
+    hdr = _recv_exact(sock, 4, deadline)
     if hdr is None:
         return None
     (length,) = struct.unpack(">I", hdr)
     if length == 0 or length > MAX_FRAME:
         return None
-    return _recv_exact(sock, length)
+    return _recv_exact(sock, length, deadline)
 
 
 # ------------------------------ crypto ------------------------------------ #
@@ -78,7 +94,7 @@ def handshake(sock, my_priv: PrivateKey, initiator: bool):
 
 
 # ------------------------- Phase 2 handshake ------------------------------ #
-def ratchet_handshake(sock, id_priv: bytes, id_pub: bytes, initiator: bool):
+def ratchet_handshake(sock, id_priv: bytes, id_pub: bytes, initiator: bool, deadline=None):
     """
     Authenticated key agreement that bootstraps a Double Ratchet.
 
@@ -102,9 +118,9 @@ def ratchet_handshake(sock, id_priv: bytes, id_pub: bytes, initiator: bool):
 
     if initiator:
         sock.sendall(my_blob)
-        peer = _recv_exact(sock, 96)
+        peer = _recv_exact(sock, 96, deadline)
     else:
-        peer = _recv_exact(sock, 96)
+        peer = _recv_exact(sock, 96, deadline)
         sock.sendall(my_blob)
     if not peer or len(peer) != 96:
         raise ConnectionError("handshake failed (bad peer handshake)")

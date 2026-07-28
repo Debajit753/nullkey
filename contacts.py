@@ -11,6 +11,7 @@ Shape:  { "<name>": {"address": "<onion or host:port>",
 """
 import os
 import json
+import tempfile
 
 
 class Contacts:
@@ -20,14 +21,51 @@ class Contacts:
         self.load()
 
     def load(self):
-        if os.path.exists(self.path):
+        """Read the book. A damaged file is moved aside, never silently ignored."""
+        if not os.path.exists(self.path):
+            return
+        try:
             with open(self.path) as f:
-                self.data = json.load(f)
+                data = json.load(f)
+        except (ValueError, OSError) as e:
+            backup = self.path + ".corrupt"
+            try:
+                os.replace(self.path, backup)
+            except OSError:
+                backup = "(could not move it aside)"
+            print("  ! contacts file was unreadable (%s)\n"
+                  "    moved to: %s\n"
+                  "    starting with an empty contact book." % (e, backup))
+            self.data = {}
+            return
+        self.data = data if isinstance(data, dict) else {}
 
     def save(self):
-        with open(self.path, "w") as f:
-            json.dump(self.data, f, indent=2)
-        os.chmod(self.path, 0o600)
+        """
+        Write the book ATOMICALLY, 0600, via temp-file + rename.
+
+        A plain open(path,"w") truncates immediately, so a crash or a full disk
+        mid-write used to leave an empty/half file — destroying every verified
+        contact. With rename you always keep either the old book or the new one.
+        """
+        directory = os.path.dirname(os.path.abspath(self.path)) or "."
+        fd, tmp = tempfile.mkstemp(dir=directory, prefix=".tmp-contacts-")
+        try:
+            try:
+                os.fchmod(fd, 0o600)        # no-op/unsupported on Windows
+            except (AttributeError, OSError):
+                pass
+            with os.fdopen(fd, "w") as f:
+                json.dump(self.data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, self.path)
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
 
     def add(self, name, address):
         entry = self.data.get(name, {})

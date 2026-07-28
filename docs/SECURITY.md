@@ -27,13 +27,22 @@ Please **do not open a public GitHub issue** for security bugs.
   services** — there's no central server that sees the metadata.
 - **Impersonation / man-in-the-middle**, *only if* both people compare the
   **safety number** out of band. This check is mandatory: skipping it removes the
-  authentication guarantee entirely (it becomes trust-on-first-use).
+  authentication guarantee entirely (it becomes trust-on-first-use). A contact's
+  identity key changing is treated as a **security event**: `/verify` refuses to
+  rebind it silently and requires an explicit `/verify <name> force`.
 - **Message size** and **when you talk**, partially: fixed-size padding hides
   length, and `--cover` adds decoy traffic.
 
 **Does NOT protect against:**
 - A **compromised device** (malware, keylogger, someone at your unlocked computer).
   Crypto can't save a broken endpoint — and your `data/` dir *is* your account.
+- **Forensic recovery after `/panic`.** `/panic` and `/panic-all` overwrite secrets
+  before unlinking and clear the terminal screen *and* scrollback, and they report
+  loudly (non-zero exit, no screen clear) if anything could not be destroyed. But
+  an overwrite is **not a guarantee** on SSDs or journaling/copy-on-write
+  filesystems — wear levelling means the drive decides where bytes really live.
+  Panic also cannot reach backups, snapshots, copies you made elsewhere, or your
+  terminal's own session log. **Full-disk encryption is the real defence here.**
 - A **global passive adversary** who can watch the whole Tor network's timing and
   volume. Padding + cover traffic raise the bar; they don't defeat this.
 - **You leaking your own identity** out of band, or **skipping the safety-number

@@ -101,12 +101,37 @@ This is the step that turns "encrypted to somebody" into "encrypted to the *righ
 | `/del-contacts <name\|all>` | delete one contact, or all of them |
 | `/connect <name\|address>` | dial a contact (retries automatically) |
 | `/verify <name>` | mark a contact verified after you've compared safety numbers |
+| `/verify <name> force` | accept an identity key that has **changed** — only after checking out of band |
 | `/clear` | clear the screen |
 | `/bye` | disconnect the current chat (stay running) |
 | `/account` | manage, create, and switch accounts interactively |
-| `/panic` | destroy identity keys/contacts and exit immediately |
 | `/quit` | exit the app |
 | `/help` | list commands |
+
+### ☢️ Destructive commands
+
+Both run **instantly, with no confirmation, and cannot be undone** — that is the
+point of a duress button. Know which one you're typing.
+
+| Command | Destroys |
+|---|---|
+| `/panic` | **this** account's identity keys + contacts, then exits. Other accounts are left alone. |
+| `/panic-all` | **every** account in the folder, then exits. |
+
+Both shred file contents before unlinking, clear the screen **and the scrollback**,
+and exit. If anything could **not** be destroyed they do *not* clear the screen —
+they list the exact surviving paths and exit non-zero, so you know you are not safe.
+
+> **What panic cannot do:** it can't reach backups, Time Machine/snapshots, another
+> disk you copied the folder to, or your terminal's own session log if you have
+> logging enabled. And on SSDs an overwrite is not a guarantee the old blocks are
+> gone. Use full-disk encryption if this matters.
+
+### If a contact's safety number changes
+
+`/verify` will **refuse** to rebind a name to a different identity key and will warn
+you. That's deliberate: a man-in-the-middle looks exactly like "they reinstalled".
+Call them and compare the new safety number out of band, then `/verify <name> force`.
 
 ## 5. Command-line flags
 
